@@ -117,6 +117,9 @@ class Map
      */
     protected $comments;
 
+    protected $checkpointsPerLap;
+    
+    protected $isMultilap;
     /**
      * @param string $filename
      * @return Map
@@ -378,4 +381,21 @@ class Map
     {
         return $this->comments;
     }
+    
+    /**
+     * @return string
+     */
+    public function getCheckpointsPerLap()
+    {
+        return $this->checkpointsPerLap;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getisMultilap()
+    {
+        return $this->isMultilap;
+    }
+
 }

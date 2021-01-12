@@ -37,7 +37,7 @@ class Parser
      * @return Map
      */
     protected static function parse($fileHandler)
-    {
+    {       
         self::ignore($fileHandler, 9);
         $classId = self::fetchLong($fileHandler);
         if ($classId != 0x03043000) {
@@ -53,7 +53,10 @@ class Parser
         $properties = [];
         foreach ($chunkInfos as $chunkId => $chunkSize) {
             switch ($chunkId) {
-                case 0x03043005:
+                case 0x03043002:
+                    $properties = array_merge($properties, self::parseMapInfo($fileHandler, $chunkSize));
+                    break;
+                case 0x03043005:                  
                     $properties = array_merge($properties, self::parseXMLHeader($fileHandler));
                     break;
                 case 0x03043007:
@@ -87,6 +90,15 @@ class Parser
         return $long[1];
     }
 
+    protected static function fetchBool($fp)
+    {
+        $read = fread($fp, 2);        
+        fseek($fp,-1, SEEK_CUR);
+        $long = unpack('v', $read);
+        
+        return $long[1] == 256?true:false;
+    }
+
     protected static function fetchString($fp)
     {
         $length = self::fetchLong($fp);
@@ -98,6 +110,32 @@ class Parser
         fread($fp, $length);
     }
 
+    protected static function parseMapInfo($fp, $size)
+    {
+        $p['ver'] = self::fetchLong($fp);
+        if($p['ver'] >= 13) {
+        $p['bronze'] = self::fetchLong($fp);
+        $p['silver'] = self::fetchLong($fp);
+        $p['gold'] = self::fetchLong($fp);
+        $p['author'] = self::fetchLong($fp);
+        $p['cost'] = self::fetchLong($fp);
+        $p['multilap'] = self::fetchBool($fp);
+        $p['tracktype'] = self::fetchLong($fp);
+        $p['u04'] = self::fetchLong($fp);
+        $p['authorScore'] = self::fetchLong($fp);
+        $p['editorMode'] = self::fetchLong($fp); 
+        $p['u05'] = self::fetchLong($fp);        
+        $p['u06'] = self::fetchLong($fp);       
+        $p['nbCheckpoints'] = self::fetchLong($fp);
+        $p['nbLaps'] = self::fetchLong($fp);        
+                
+        return ["checkpointsPerLap" => $p['nbCheckpoints'],
+                "nbLaps" => $p['nbLaps'],
+                "isMultilap" => $p['multilap']
+                ];
+        }
+        return [];
+    }
     protected static function parseXMLHeader($fp)
     {
         $properties = [];
@@ -170,7 +208,7 @@ class Parser
                     $gdImage = imagecreatefromstring(fread($fp, $thumbSize));
                     imageflip($gdImage, IMG_FLIP_VERTICAL);
                     imagejpeg($gdImage, $temporaryStream, 100);
-                    $properties['thumbnail'] = new Thumbnail(stream_get_contents($temporaryStream, -1, 0));
+                    //  $properties['thumbnail'] = new Thumbnail(stream_get_contents($temporaryStream, -1, 0));
                 }
             }
             self::ignore($fp, strlen('</Thumbnail.jpg>'));
