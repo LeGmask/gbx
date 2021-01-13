@@ -1,5 +1,5 @@
 <?php
-require './vendor/autoload.php';
+require('./vendor/autoload.php');
 use Manialib\Gbx\Map;
 
 if (count($argv) <= 1) {
@@ -8,13 +8,14 @@ if (count($argv) <= 1) {
 } else {
     $maps = glob($argv[1] . "/*");
     foreach ($maps as $map) {
-        if (preg_match("/\.map\.gbx/", strtolower($map))) {
-            echo $map ."\n";
-            $info = Map::loadFile($map);            
-            echo "name: " . $info->getName() . " -> ";
-            echo $info->getCheckpointsPerLap() . " / " . $info->getNbLaps() . "\n";
-
+        if (preg_match("/(\.(map|challenge)\.gbx)/", strtolower($map))) {
+            echo $map;
+            try {
+                $info = Map::loadFile($map);
+                echo " Ok!\n";
+            } catch (Exception $ex) {
+                echo " Error: " . $ex->getMessage() . "\n";
+            }
         }
-
     }
 }

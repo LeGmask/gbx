@@ -37,10 +37,10 @@ class Parser
      * @return Map
      */
     protected static function parse($fileHandler)
-    {       
+    {
         self::ignore($fileHandler, 9);
         $classId = self::fetchLong($fileHandler);
-        if ($classId != 0x03043000) {
+        if (!in_array($classId, [0x03043000, 0x24003000, 0x21080000])) {
             throw new \InvalidArgumentException('File is not a map');
         }
         self::ignore($fileHandler, 4);
@@ -53,13 +53,13 @@ class Parser
         $properties = [];
         foreach ($chunkInfos as $chunkId => $chunkSize) {
             switch ($chunkId) {
-                case 0x03043002:
+                case $classId + 0x02:
                     $properties = array_merge($properties, self::parseMapInfo($fileHandler, $chunkSize));
                     break;
-                case 0x03043005:                  
+                case $classId + 0x05:
                     $properties = array_merge($properties, self::parseXMLHeader($fileHandler));
                     break;
-                case 0x03043007:
+                case $classId + 0x07:
                     $properties = array_merge($properties, self::parseThumbnailAndComment($fileHandler));
                     break;
                 default:
@@ -92,11 +92,11 @@ class Parser
 
     protected static function fetchBool($fp)
     {
-        $read = fread($fp, 2);        
-        fseek($fp,-1, SEEK_CUR);
+        $read = fread($fp, 2);
+        fseek($fp, -1, SEEK_CUR);
         $long = unpack('v', $read);
-        
-        return $long[1] == 256?true:false;
+
+        return $long[1] == 256 ? true : false;
     }
 
     protected static function fetchString($fp)
@@ -113,26 +113,26 @@ class Parser
     protected static function parseMapInfo($fp, $size)
     {
         $p['ver'] = self::fetchLong($fp);
-        if($p['ver'] >= 13) {
-        $p['bronze'] = self::fetchLong($fp);
-        $p['silver'] = self::fetchLong($fp);
-        $p['gold'] = self::fetchLong($fp);
-        $p['author'] = self::fetchLong($fp);
-        $p['cost'] = self::fetchLong($fp);
-        $p['multilap'] = self::fetchBool($fp);
-        $p['tracktype'] = self::fetchLong($fp);
-        $p['u04'] = self::fetchLong($fp);
-        $p['authorScore'] = self::fetchLong($fp);
-        $p['editorMode'] = self::fetchLong($fp); 
-        $p['u05'] = self::fetchLong($fp);        
-        $p['u06'] = self::fetchLong($fp);       
-        $p['nbCheckpoints'] = self::fetchLong($fp);
-        $p['nbLaps'] = self::fetchLong($fp);        
-                
-        return ["checkpointsPerLap" => $p['nbCheckpoints'],
+        if ($p['ver'] >= 13) {
+            $p['bronze'] = self::fetchLong($fp);
+            $p['silver'] = self::fetchLong($fp);
+            $p['gold'] = self::fetchLong($fp);
+            $p['author'] = self::fetchLong($fp);
+            $p['cost'] = self::fetchLong($fp);
+            $p['multilap'] = self::fetchBool($fp);
+            $p['tracktype'] = self::fetchLong($fp);
+            $p['u04'] = self::fetchLong($fp);
+            $p['authorScore'] = self::fetchLong($fp);
+            $p['editorMode'] = self::fetchLong($fp);
+            $p['u05'] = self::fetchLong($fp);
+            $p['u06'] = self::fetchLong($fp);
+            $p['nbCheckpoints'] = self::fetchLong($fp);
+            $p['nbLaps'] = self::fetchLong($fp);
+
+            return ["checkpointsPerLap" => $p['nbCheckpoints'],
                 "nbLaps" => $p['nbLaps'],
-                "isMultilap" => $p['multilap']
-                ];
+                "isMultilap" => $p['multilap'],
+            ];
         }
         return [];
     }
